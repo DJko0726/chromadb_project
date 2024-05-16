@@ -1,19 +1,13 @@
 from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
-import chromadb
+from chroma import ChromaDB
 import os
 
 
 app = Flask(__name__)
 app.config['JSON_AS_ASCII'] = False
 CORS(app)
-
-chroma_client = chromadb.PersistentClient(path="./data/main")
-
-collection = chroma_client.get_or_create_collection(
-    name="my_collection",
-    metadata={"hnsw:space": "cosine"} 
-)
+db = ChromaDB()
 #insert documents in chromadb
 @app.route('/api/v1/add', methods=['POST'])
 def insert_data():
@@ -22,13 +16,11 @@ def insert_data():
     if not documents:
         return jsonify({'error': 'No documents provided'}), 400
 
-    count = collection.count()
-    
-    collection.upsert(
-            documents=[documents],
-            ids='id' + str(count+1),
-        )
-    return jsonify({'message': 'Documents added successfully'}), 200
+    try:
+        result = db.add(documents)
+        return jsonify({'Data': result}), 200
+    except Exception as e:
+        return jsonify({'error_message': e}), 200
 
 #search data
 @app.route('/api/v1/search',methods=['get'])
@@ -45,12 +37,26 @@ def get_data():
     else:
         limit = 10
 
+    result = db.search(text,limit)
+    return jsonify(result), 200
+
+#list data
+@app.route('/api/v1/list',methods=['get'])
+def list_data():
+    limit = request.args.get('limit', type=int)
+
+    if limit is not None:
+        limit = int(limit)
+        if limit < 1:
+            return jsonify({'error': 'Limit must be greater than zero'}), 400
+    else:
+        limit = 10
+
     results = collection.query(
-        query_texts=[text], # Chroma will embed this for you
-        n_results=limit, # how many results to return
+        limit=limit, # how many results to return
     )
 
-    return jsonify(results['documents']), 200
+    return jsonify(results), 200
 
 
 @app.route('/')
