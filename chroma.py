@@ -9,25 +9,37 @@ class ChromaDB:
         )
 
     def add(self, documents):
-        count = self.collection.count()
-        ids = 'id' + str(count + 1)
-        print(ids)
-        self.collection.upsert(
-            documents=documents,
-            ids=ids, 
-        )
+        try:
+            count = self.collection.count()
+            doc_ids = 'id' + str(count + 1)
+            
+            self.collection.upsert(
+                documents=documents,
+                ids=doc_ids,
+            )
+            
+            return self.select_by_id(doc_ids)
+        except Exception as e:
+            print(f"Error while adding documents: {e}")
+            return None
 
-        return self.selectById(ids)
-    
-    def selectById(self, ids):
-        result = self.collection.get(
-            ids=[ids]
-        )
-        return result
-    
-    def search(self, text, limit):
-        results = self.collection.query(
-            query_texts=[text], # Chroma will embed this for you
-            n_results=limit, # how many results to return
-        )
-        return results
+    def select_by_id(self, ids):
+        try:
+            result = self.collection.get(
+                ids=[ids]
+            )
+            return result
+        except Exception as e:
+            print(f"Error while selecting by ID: {e}")
+            return None
+
+    def search(self, text, limit=10):
+        try:
+            results = self.collection.query(
+                query_texts=[text], 
+                n_results=limit
+            )
+            return results
+        except Exception as e:
+            print(f"Error while searching: {e}")
+            return None

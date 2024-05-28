@@ -1,14 +1,72 @@
 <!DOCTYPE html>
+
 <html lang="en">
+
 <head>
+
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles.css') }}">
+
     <meta charset="UTF-8">
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>chromadb is good</title>
+
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='doggy.png') }}">
+
 </head>
+
 <body>
+
     <h1>Text Search</h1>
-    <p>新增文本</p>
+
+    <form id="searchForm">
+
+        <input type="text" id="searchText" placeholder="輸入文字">
+
+        <input type="number" id="limit" placeholder="限制數量">
+
+        <button type="button" onclick="searchText()">搜尋</button>
+
+    </form>
+
+
+    <div id="results"></div>
+
+    <script>
+
+        async function searchText() {
+            const text = document.getElementById('searchText').value;
+            const limit = document.getElementById('limit').value;
+            const response = await fetch('/api/v1/list', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ text, limit })
+            });
+            const data = await response.json();
+            document.getElementById('results').innerHTML = JSON.stringify(data);
+        }
+
+        async function addText(event) {
+            event.preventDefault(); // 阻止表單的預設行為
+            const documents = document.getElementById('addText').value;
+            const response = await fetch('/api/v1/add', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ documents })
+            });
+            const data = await response.json();
+            alert('新增成功: ' + JSON.stringify(data));
+        }
+
+        document.getElementById('addForm').addEventListener('submit', addText);
+
+    </script>
+
 </body>
+
 </html>
